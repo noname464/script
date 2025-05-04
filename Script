@@ -1,281 +1,306 @@
-local Player = game:GetService("Players").LocalPlayer
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+return function()
+    -- Инициализация сервисов
+    local Players = game:GetService("Players")
+    local TweenService = game:GetService("TweenService")
+    local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
 
--- Настройки стиля
-local SOLARA_COLORS = {
-    Main = Color3.fromRGB(15, 15, 20),
-    Header = Color3.fromRGB(25, 25, 30),
-    Button = Color3.fromRGB(30, 30, 40),
-    ButtonHover = Color3.fromRGB(40, 40, 50),
-    ButtonActive = Color3.fromRGB(0, 120, 215),
-    Text = Color3.fromRGB(240, 240, 240),
-    Accent = Color3.fromRGB(0, 150, 255),
-    Divider = Color3.fromRGB(50, 50, 60),
-    Border = Color3.fromRGB(50, 50, 60)
-}
+    -- Основные переменные
+    local Player = Players.LocalPlayer
+    local GUI = {
+        ScreenGui = Instance.new("ScreenGui"),
+        MainFrame = nil,
+        IsVisible = true,
+        Dragging = false,
+        DragStart = Vector2.new(0, 0),
+        StartPos = UDim2.new(0, 0, 0, 0)
+    }
 
-local GUI = {
-    ScreenGui = Instance.new("ScreenGui"),
-    MainFrame = nil,
-    IsVisible = true,
-    Dragging = false,
-    DragStart = nil,
-    StartPos = nil
-}
+    -- Настройки стиля
+    local SOLARA_COLORS = {
+        Main = Color3.fromRGB(15, 15, 20),
+        Header = Color3.fromRGB(25, 25, 30),
+        Button = Color3.fromRGB(30, 30, 40),
+        ButtonHover = Color3.fromRGB(40, 40, 50),
+        ButtonActive = Color3.fromRGB(0, 120, 215),
+        Text = Color3.fromRGB(240, 240, 240),
+        Accent = Color3.fromRGB(0, 150, 255),
+        Divider = Color3.fromRGB(50, 50, 60),
+        Border = Color3.fromRGB(50, 50, 60)
+    }
 
--- Инициализация GUI
-GUI.ScreenGui.Name = "AnimationMenu"
-GUI.ScreenGui.ResetOnSpawn = false
+    -- ID анимаций Cartoon
+    local ANIMATION_IDS = {
+        idle = {"742637544", "742638445"},
+        walk = "742640026",
+        run = "742638842",
+        jump = "742637942",
+        climb = "742636889",
+        fall = "742637151"
+    }
 
-local function CreateMainFrame()
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 52.5)
-    frame.Position = UDim2.new(0.5, -150, 0, 75)
-    frame.AnchorPoint = Vector2.new(0.5, 0)
-    frame.BackgroundColor3 = SOLARA_COLORS.Main
-    frame.ClipsDescendants = true
-    frame.Visible = GUI.IsVisible
-    
-    local uiCorner = Instance.new("UICorner")
-    uiCorner.CornerRadius = UDim.new(0, 12)
-    uiCorner.Parent = frame
-    
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = SOLARA_COLORS.Border
-    uiStroke.Thickness = 3
-    uiStroke.Parent = frame
-    
-    -- Header
-    local header = Instance.new("Frame")
-    header.Size = UDim2.new(1, 0, 0, 52.5)
-    header.BackgroundColor3 = SOLARA_COLORS.Header
-    header.Name = "Header"
-    
-    local headerCorner = Instance.new("UICorner")
-    headerCorner.CornerRadius = UDim.new(0, 12)
-    headerCorner.Parent = header
-    
-    -- Заголовок
-    local title = Instance.new("TextLabel")
-    title.Text = "ANIMATION PACK"
-    title.TextColor3 = SOLARA_COLORS.Accent
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 18
-    title.Position = UDim2.new(0, 15, 0, 0)
-    title.Size = UDim2.new(0, 200, 1, 0)
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.BackgroundTransparency = 1
-    
-    -- Кнопка переключения
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Text = "≡"
-    toggleButton.Size = UDim2.new(0, 52.5, 0, 52.5)
-    toggleButton.Position = UDim2.new(1, -52.5, 0, 0)
-    toggleButton.Font = Enum.Font.GothamBold
-    toggleButton.TextSize = 30
-    toggleButton.TextColor3 = SOLARA_COLORS.Text
-    toggleButton.Name = "ToggleButton"
-    toggleButton.BackgroundColor3 = SOLARA_COLORS.Header
-    toggleButton.BackgroundTransparency = 0
-    
-    -- Стилизация кнопки
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0, 8)
-    toggleCorner.Parent = toggleButton
-    
-    local toggleStroke = Instance.new("UIStroke")
-    toggleStroke.Color = SOLARA_COLORS.Border
-    toggleStroke.Thickness = 1.5
-    toggleStroke.Parent = toggleButton
-    
-    -- Эффекты наведения
-    toggleButton.MouseEnter:Connect(function()
-        toggleButton.BackgroundColor3 = SOLARA_COLORS.ButtonHover
-    end)
-    
-    toggleButton.MouseLeave:Connect(function()
+    -- Инициализация GUI
+    GUI.ScreenGui.Name = "AnimationMenu"
+    GUI.ScreenGui.ResetOnSpawn = false
+    GUI.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Создание главного фрейма
+    local function CreateMainFrame()
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 300, 0, 52.5)
+        frame.Position = UDim2.new(0.5, -150, 0, 75)
+        frame.AnchorPoint = Vector2.new(0.5, 0)
+        frame.BackgroundColor3 = SOLARA_COLORS.Main
+        frame.ClipsDescendants = true
+        frame.Visible = GUI.IsVisible
+
+        -- Стилизация фрейма
+        local uiCorner = Instance.new("UICorner")
+        uiCorner.CornerRadius = UDim.new(0, 12)
+        uiCorner.Parent = frame
+
+        local uiStroke = Instance.new("UIStroke")
+        uiStroke.Color = SOLARA_COLORS.Border
+        uiStroke.Thickness = 3
+        uiStroke.Parent = frame
+
+        -- Заголовок
+        local header = Instance.new("Frame")
+        header.Size = UDim2.new(1, 0, 0, 52.5)
+        header.BackgroundColor3 = SOLARA_COLORS.Header
+        header.Name = "Header"
+
+        local headerCorner = Instance.new("UICorner")
+        headerCorner.CornerRadius = UDim.new(0, 12)
+        headerCorner.Parent = header
+
+        -- Текст заголовка
+        local title = Instance.new("TextLabel")
+        title.Text = "ANIMATION PACK"
+        title.TextColor3 = SOLARA_COLORS.Accent
+        title.Font = Enum.Font.GothamBold
+        title.TextSize = 18
+        title.Position = UDim2.new(0, 15, 0, 0)
+        title.Size = UDim2.new(0, 200, 1, 0)
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.BackgroundTransparency = 1
+
+        -- Кнопка переключения
+        local toggleButton = Instance.new("TextButton")
+        toggleButton.Text = "≡"
+        toggleButton.Size = UDim2.new(0, 52.5, 0, 52.5)
+        toggleButton.Position = UDim2.new(1, -52.5, 0, 0)
+        toggleButton.Font = Enum.Font.GothamBold
+        toggleButton.TextSize = 30
+        toggleButton.TextColor3 = SOLARA_COLORS.Text
+        toggleButton.Name = "ToggleButton"
         toggleButton.BackgroundColor3 = SOLARA_COLORS.Header
-    end)
+        toggleButton.BackgroundTransparency = 0
 
-    -- Сборка элементов
-    header.Parent = frame
-    title.Parent = header
-    toggleButton.Parent = header
-    
-    return frame
-end
+        -- Стилизация кнопки
+        local toggleCorner = Instance.new("UICorner")
+        toggleCorner.CornerRadius = UDim.new(0, 8)
+        toggleCorner.Parent = toggleButton
 
-local function CreateContent()
-    local content = Instance.new("Frame")
-    content.Size = UDim2.new(1, 0, 1, -52.5)
-    content.Position = UDim2.new(0, 0, 0, 52.5)
-    content.BackgroundTransparency = 1
-    content.Visible = false
-    
-    -- Кнопка управления анимациями
-    local animButton = Instance.new("TextButton")
-    animButton.Text = "Activate Cartoon Animations"
-    animButton.Size = UDim2.new(0.9, 0, 0, 45)
-    animButton.Position = UDim2.new(0.05, 0, 0.1, 0)
-    animButton.Font = Enum.Font.GothamSemibold
-    animButton.TextSize = 16
-    animButton.TextColor3 = SOLARA_COLORS.Text
-    animButton.BackgroundColor3 = SOLARA_COLORS.Button
-    animButton.Name = "AnimButton"
-    
-    -- Стилизация кнопки
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 8)
-    buttonCorner.Parent = animButton
-    
-    local buttonStroke = Instance.new("UIStroke")
-    buttonStroke.Color = SOLARA_COLORS.Border
-    buttonStroke.Thickness = 1.5
-    buttonStroke.Parent = animButton
-    
-    -- Эффекты наведения
-    animButton.MouseEnter:Connect(function()
-        animButton.BackgroundColor3 = SOLARA_COLORS.ButtonHover
-    end)
-    
-    animButton.MouseLeave:Connect(function()
-        animButton.BackgroundColor3 = SOLARA_COLORS.Button
-    end)
-    
-    animButton.Parent = content
-    
-    return content
-end
+        local toggleStroke = Instance.new("UIStroke")
+        toggleStroke.Color = SOLARA_COLORS.Border
+        toggleStroke.Thickness = 1.5
+        toggleStroke.Parent = toggleButton
 
--- Анимация меню
-local function ToggleMenu()
-    GUI.IsVisible = not GUI.IsVisible
-    local content = GUI.MainFrame:FindFirstChild("Content")
-    
-    if GUI.IsVisible then
-        GUI.MainFrame.Visible = true
-        local tween = TweenService:Create(
-            GUI.MainFrame,
-            TweenInfo.new(0.3, Enum.EasingStyle.Quad),
-            {Size = UDim2.new(0, 300, 0, 150)}
-        )
-        tween:Play()
-        tween.Completed:Wait()
-        content.Visible = true
-    else
-        local tween = TweenService:Create(
-            GUI.MainFrame,
-            TweenInfo.new(0.3, Enum.EasingStyle.Quad),
-            {Size = UDim2.new(0, 300, 0, 52.5)}
-        )
-        tween:Play()
-        content.Visible = false
+        -- Эффекты наведения
+        toggleButton.MouseEnter:Connect(function()
+            toggleButton.BackgroundColor3 = SOLARA_COLORS.ButtonHover
+        end)
+
+        toggleButton.MouseLeave:Connect(function()
+            toggleButton.BackgroundColor3 = SOLARA_COLORS.Header
+        end)
+
+        -- Сборка элементов
+        header.Parent = frame
+        title.Parent = header
+        toggleButton.Parent = header
+        
+        return frame
     end
-end
 
--- Логика перетаскивания
-local function EnableDragging()
-    GUI.MainFrame:WaitForChild("Header").InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GUI.Dragging = true
-            GUI.DragStart = input.Position
-            GUI.StartPos = GUI.MainFrame.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    GUI.Dragging = false
-                end
-            end)
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if GUI.Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - GUI.DragStart
-            GUI.MainFrame.Position = UDim2.new(
-                GUI.StartPos.X.Scale,
-                GUI.StartPos.X.Offset + delta.X,
-                GUI.StartPos.Y.Scale,
-                GUI.StartPos.Y.Offset + delta.Y
+    -- Создание контента
+    local function CreateContent()
+        local content = Instance.new("Frame")
+        content.Size = UDim2.new(1, 0, 1, -52.5)
+        content.Position = UDim2.new(0, 0, 0, 52.5)
+        content.BackgroundTransparency = 1
+        content.Visible = false
+
+        -- Кнопка активации анимаций
+        local animButton = Instance.new("TextButton")
+        animButton.Text = "Activate Cartoon Animations"
+        animButton.Size = UDim2.new(0.9, 0, 0, 45)
+        animButton.Position = UDim2.new(0.05, 0, 0.1, 0)
+        animButton.Font = Enum.Font.GothamSemibold
+        animButton.TextSize = 16
+        animButton.TextColor3 = SOLARA_COLORS.Text
+        animButton.BackgroundColor3 = SOLARA_COLORS.Button
+        animButton.Name = "AnimButton"
+
+        -- Стилизация кнопки
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 8)
+        buttonCorner.Parent = animButton
+
+        local buttonStroke = Instance.new("UIStroke")
+        buttonStroke.Color = SOLARA_COLORS.Border
+        buttonStroke.Thickness = 1.5
+        buttonStroke.Parent = animButton
+
+        -- Эффекты наведения
+        animButton.MouseEnter:Connect(function()
+            animButton.BackgroundColor3 = SOLARA_COLORS.ButtonHover
+        end)
+
+        animButton.MouseLeave:Connect(function()
+            animButton.BackgroundColor3 = SOLARA_COLORS.Button
+        end)
+
+        animButton.Parent = content
+        
+        return content
+    end
+
+    -- Переключение меню
+    local function ToggleMenu()
+        GUI.IsVisible = not GUI.IsVisible
+        local content = GUI.MainFrame:FindFirstChild("Content")
+        
+        if GUI.IsVisible then
+            GUI.MainFrame.Visible = true
+            local tween = TweenService:Create(
+                GUI.MainFrame,
+                TweenInfo.new(0.3, Enum.EasingStyle.Quad),
+                {Size = UDim2.new(0, 300, 0, 150)}
             )
+            tween:Play()
+            tween.Completed:Wait()
+            content.Visible = true
+        else
+            local tween = TweenService:Create(
+                GUI.MainFrame,
+                TweenInfo.new(0.3, Enum.EasingStyle.Quad),
+                {Size = UDim2.new(0, 300, 0, 52.5)}
+            )
+            tween:Play()
+            content.Visible = false
         end
-    end)
-end
+    end
 
--- Улучшенная функция применения анимаций
-local function ApplyCartoonAnimations()
-    if not Player.Character then return end
-    
-    local humanoid = Player.Character:FindFirstChild("Humanoid")
-    local animate = Player.Character:FindFirstChild("Animate")
-    
-    if humanoid and animate then
-        animate.Disabled = true
-
-        -- Безопасная установка анимаций
-        local function SafeSetAnimation(containerName, animationName, assetId)
-            local container = animate:FindFirstChild(containerName)
-            if container then
-                local animation = container:FindFirstChild(animationName)
-                if animation and animation:IsA("Animation") then
-                    animation.AnimationId = "rbxassetid://"..assetId
-                end
+    -- Логика перетаскивания
+    local function EnableDragging()
+        GUI.MainFrame:FindFirstChild("Header").InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                GUI.Dragging = true
+                GUI.DragStart = input.Position
+                GUI.StartPos = GUI.MainFrame.Position
+                
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        GUI.Dragging = false
+                    end
+                end)
             end
-        end
+        end)
 
-        -- Установка всех анимаций с проверкой
-        SafeSetAnimation("idle", "Animation1", "742637544")
-        SafeSetAnimation("idle", "Animation2", "742638445")
-        SafeSetAnimation("walk", "WalkAnim", "742640026")
-        SafeSetAnimation("run", "RunAnim", "742638842")
-        SafeSetAnimation("jump", "JumpAnim", "742637942")
-        SafeSetAnimation("climb", "ClimbAnim", "742636889")
-        SafeSetAnimation("fall", "FallAnim", "742637151")
+        UserInputService.InputChanged:Connect(function(input)
+            if GUI.Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = input.Position - GUI.DragStart
+                GUI.MainFrame.Position = UDim2.new(
+                    GUI.StartPos.X.Scale,
+                    GUI.StartPos.X.Offset + delta.X,
+                    GUI.StartPos.Y.Scale,
+                    GUI.StartPos.Y.Offset + delta.Y
+                )
+            end
+        end)
+    end
 
-        -- Плавный сброс состояния
+    -- Функция сброса анимаций
+    local function ResetAnimations(humanoid)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
         task.wait(0.2)
-        animate.Disabled = false
         humanoid:ChangeState(Enum.HumanoidStateType.Running)
     end
-end
 
--- Инициализация интерфейса
-GUI.MainFrame = CreateMainFrame()
-local contentFrame = CreateContent()
-contentFrame.Name = "Content"
-contentFrame.Parent = GUI.MainFrame
-GUI.MainFrame.Parent = GUI.ScreenGui
+    -- Основная функция применения анимаций
+    local function ApplyCartoonAnimations()
+        if not Player.Character then return end
+        
+        local humanoid = Player.Character:FindFirstChild("Humanoid")
+        local animate = Player.Character:FindFirstChild("Animate")
+        
+        if humanoid and animate then
+            -- Остановка текущих анимаций
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
 
--- Обработчики событий
-GUI.MainFrame:WaitForChild("Header"):WaitForChild("ToggleButton").MouseButton1Click:Connect(ToggleMenu)
-EnableDragging()
+            animate.Disabled = true
 
--- Обработчик кнопки анимаций
-contentFrame:WaitForChild("AnimButton").MouseButton1Click:Connect(function()
-    ApplyCartoonAnimations()
-end)
+            -- Установка новых анимаций
+            local function SafeSetAnimation(container, animName, assetId)
+                if container and container:FindFirstChild(animName) then
+                    container[animName].AnimationId = "rbxassetid://"..assetId
+                end
+            end
 
--- Автоматическое применение при респавне
-Player.CharacterAdded:Connect(function(character)
-    GUI.ScreenGui.Parent = Player:FindFirstChild("PlayerGui")
-    
-    -- Ожидание полной инициализации анимаций
-    local animate = character:WaitForChild("Animate")
-    animate:WaitForChild("walk"):WaitForChild("WalkAnim")
-    
-    task.wait(0.5) -- Дополнительная задержка
-    ApplyCartoonAnimations()
-    GUI.MainFrame.Visible = GUI.IsVisible
-end)
+            SafeSetAnimation(animate.idle, "Animation1", ANIMATION_IDS.idle[1])
+            SafeSetAnimation(animate.idle, "Animation2", ANIMATION_IDS.idle[2])
+            SafeSetAnimation(animate.walk, "WalkAnim", ANIMATION_IDS.walk)
+            SafeSetAnimation(animate.run, "RunAnim", ANIMATION_IDS.run)
+            SafeSetAnimation(animate.jump, "JumpAnim", ANIMATION_IDS.jump)
+            SafeSetAnimation(animate.climb, "ClimbAnim", ANIMATION_IDS.climb)
+            SafeSetAnimation(animate.fall, "FallAnim", ANIMATION_IDS.fall)
 
--- Горячая клавиша
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        ToggleMenu()
+            -- Сброс состояний
+            ResetAnimations(humanoid)
+            animate.Disabled = false
+        end
     end
-end)
 
--- Первоначальная настройка
-GUI.ScreenGui.Parent = Player:FindFirstChild("PlayerGui")
+    -- Инициализация интерфейса
+    GUI.MainFrame = CreateMainFrame()
+    local contentFrame = CreateContent()
+    contentFrame.Name = "Content"
+    contentFrame.Parent = GUI.MainFrame
+    GUI.MainFrame.Parent = GUI.ScreenGui
+
+    -- Обработчики событий
+    GUI.MainFrame:FindFirstChild("Header"):FindFirstChild("ToggleButton").MouseButton1Click:Connect(ToggleMenu)
+    contentFrame:FindFirstChild("AnimButton").MouseButton1Click:Connect(ApplyCartoonAnimations)
+    EnableDragging()
+
+    -- Обработчик респавна
+    Player.CharacterAdded:Connect(function(character)
+        GUI.ScreenGui.Parent = Player:FindFirstChild("PlayerGui")
+        
+        -- Ожидание инициализации анимаций
+        local animate = character:WaitForChild("Animate")
+        animate:WaitForChild("walk"):WaitForChild("WalkAnim")
+        
+        task.wait(1) -- Дополнительная задержка
+        ApplyCartoonAnimations()
+        GUI.MainFrame.Visible = GUI.IsVisible
+    end)
+
+    -- Горячая клавиша
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            ToggleMenu()
+        end
+    end)
+
+    -- Первоначальная настройка
+    if Player.PlayerGui then
+        GUI.ScreenGui.Parent = Player.PlayerGui
+    end
+end
